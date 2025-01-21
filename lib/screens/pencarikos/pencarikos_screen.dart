@@ -1,37 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:bottom_navy_bar/bottom_navy_bar.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'pesan_screen.dart';
+import 'package:kosautb/screens/pencarikos/pesan_screen.dart';
+import 'home_screen.dart';
+import 'pesanan_screen.dart';
+import 'profile_screen.dart';
 
 class PencariKosScreen extends StatefulWidget {
-  final String email;
-
-  const PencariKosScreen({super.key, required this.email});
+  const PencariKosScreen({super.key});
 
   @override
   State<PencariKosScreen> createState() => _PencariKosScreenState();
 }
 
 class _PencariKosScreenState extends State<PencariKosScreen> {
-  late Future<List<Map<String, dynamic>>> _kosList;
   int _currentIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _kosList = fetchKosData();
-  }
-
-  Future<List<Map<String, dynamic>>> fetchKosData() async {
-    try {
-      final response =
-          await Supabase.instance.client.from('tambahkos').select();
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      debugPrint('Error fetching kos data: $e');
-      return [];
-    }
-  }
 
   void _showKosDetail(Map<String, dynamic> kosData) {
     showDialog(
@@ -55,17 +37,18 @@ class _PencariKosScreenState extends State<PencariKosScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () =>
+                  Navigator.pop(context), // Aksi untuk tombol "Tutup"
               child: const Text('Tutup'),
             ),
             TextButton(
               onPressed: () {
+                // Aksi untuk tombol "Pesan", navigasi ke halaman pesan_screen.dart
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => PesanScreen(
-                      kosData: kosData,
-                    ),
+                    builder: (context) =>
+                        PesanScreen(kosData: kosData), // Kirim data kos
                   ),
                 );
               },
@@ -79,81 +62,70 @@ class _PencariKosScreenState extends State<PencariKosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      HomeScreen(onKosTap: _showKosDetail),
+      const PesananScreen(),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pencari Kos'),
-      ),
-      body: _currentIndex == 0
-          ? FutureBuilder<List<Map<String, dynamic>>>(
-              future: _kosList,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError ||
-                    snapshot.data == null ||
-                    snapshot.data!.isEmpty) {
-                  return const Center(child: Text('Belum ada data kos'));
-                }
-
-                final kosList = snapshot.data!;
-
-                return GridView.builder(
-                  padding: const EdgeInsets.all(8.0),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 8.0,
-                    crossAxisSpacing: 8.0,
-                    childAspectRatio: 0.8,
-                  ),
-                  itemCount: kosList.length,
-                  itemBuilder: (context, index) {
-                    final kos = kosList[index];
-
-                    return GestureDetector(
-                      onTap: () => _showKosDetail(kos),
-                      child: Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(10)),
-                                child: Image.asset(
-                                  'assets/images/kosan.jpg',
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                kos['nama_kos'] ?? '',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
               },
-            )
-          : Center(
+            );
+          },
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
               child: Text(
-                  _currentIndex == 1 ? 'Halaman Favorit' : 'Halaman Pengaturan',
-                  style: const TextStyle(fontSize: 20)),
+                'Menu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
             ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Home'),
+              onTap: () {
+                setState(() => _currentIndex = 0);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.message),
+              title: const Text('Pesanan'),
+              onTap: () {
+                setState(() => _currentIndex = 1);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Profile'),
+              onTap: () {
+                setState(() => _currentIndex = 2);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+      body: pages[_currentIndex],
       bottomNavigationBar: BottomNavyBar(
         selectedIndex: _currentIndex,
         showElevation: true,
@@ -165,13 +137,13 @@ class _PencariKosScreenState extends State<PencariKosScreen> {
             activeColor: Colors.blue,
           ),
           BottomNavyBarItem(
-            icon: const Icon(Icons.favorite),
-            title: const Text('Favorit'),
+            icon: const Icon(Icons.message),
+            title: const Text('Pesanan'),
             activeColor: Colors.pink,
           ),
           BottomNavyBarItem(
-            icon: const Icon(Icons.settings),
-            title: const Text('Pengaturan'),
+            icon: const Icon(Icons.person),
+            title: const Text('Profile'),
             activeColor: Colors.green,
           ),
         ],

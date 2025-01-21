@@ -53,7 +53,7 @@ class LoginScreen extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PencariKosScreen(email: userEmail),
+            builder: (context) => PencariKosScreen(),
           ),
         );
       } else {

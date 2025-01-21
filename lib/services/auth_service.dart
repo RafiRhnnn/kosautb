@@ -11,19 +11,24 @@ class AuthService {
     required String role,
   }) async {
     try {
+      // Insert data ke tabel 'users'
       final response = await _client.from('users').insert({
         'email': email,
         'password': password,
         'role': role,
         'created_at': DateTime.now().toIso8601String(),
-      });
+      }).select(); // Gunakan select() untuk mendapatkan data hasil insert
 
-      if (response != null) {
-        return null; // Berhasil tanpa error
+      // Periksa apakah ada data yang berhasil dimasukkan
+      if (response.isEmpty) {
+        return 'Registration failed. No data was inserted.';
       }
-      return 'Registration failed. Please try again.';
+
+      // Registrasi berhasil
+      return null;
     } catch (e) {
-      return 'Error: $e';
+      // Tangani error runtime
+      return 'Unexpected error: $e';
     }
   }
 
